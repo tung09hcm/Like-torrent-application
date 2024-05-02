@@ -1,0 +1,4 @@
+flask==3.0.3
+requests==2.31.0
+bencodepy==0.9.5
+bencode.py==4.0.0
