@@ -50,7 +50,7 @@ Available Commands:
 
 ## References
 There is plenty of information on how to write a BitTorrent client
-available on the Internet. These two articles were the real enablers
+available on the Internet. These three articles were the real enablers
 for my implementation:
 
 * http://www.kristenwidman.com/blog/33/how-to-write-a-bittorrent-client-part-1/
