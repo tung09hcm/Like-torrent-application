@@ -1,4 +1,4 @@
-import requests 
+import requests
 import os
 import random
 import hashlib
@@ -166,6 +166,7 @@ def create_pieces_local(file_path):
                 break
             pieces.append(piece)
     return pieces
+
 def assemble_file(piece_list, output_file_path):
     output_dir = os.path.dirname(output_file_path)
     if not os.path.exists(output_dir):
@@ -173,6 +174,7 @@ def assemble_file(piece_list, output_file_path):
     with open(output_file_path, 'wb') as f:  # Mở tệp tin đầu ra ở chế độ nhị phân
         for piece in piece_list:
             f.write(piece)
+
 def decode_bencode(bencoded_value):
     if chr(bencoded_value[0]).isdigit():
         first_colon_index = bencoded_value.find(b":")
@@ -227,6 +229,7 @@ def decode_bencode_list_rec(bencoded_list, bencoded_string):
     output, leftover = decode_bencode(corrected_string)
     bencoded_list.append(output)
     return decode_bencode_list_rec(bencoded_list, leftover)
+
 def _calculate_peer_id():
     """
     Calculate and return a unique Peer ID.
@@ -543,7 +546,7 @@ def main():
                     connection[i].send(("Stop").encode())
 
                 # Download thành công tự động seed lên server
-                seed("downloads/" + name)
+                seed(name)
 
         elif(command == "number_of_piece"):
             if(len(argument) != 2):
