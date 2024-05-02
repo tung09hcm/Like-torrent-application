@@ -8,7 +8,9 @@ Current features:
 - [x] Support multi-file torrents
 ## Getting started
 Install the needed dependencies and run the unit tests with:
-    pip install -r requirements.txt
+
+    $ pip install -r requirements.txt
+
 ## Design considerations
 • A centralized server keeps track of which clients are connected and storing what pieces of files.
 
