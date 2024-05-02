@@ -57,3 +57,5 @@ for my implementation:
 
 * https://wiki.theory.org/BitTorrentSpecification
 
+* https://www.bittorrent.org/beps/bep_0003.html#trackers
+
