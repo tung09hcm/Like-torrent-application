@@ -11,6 +11,8 @@ Install the needed dependencies and run the unit tests with:
 
     $ pip install -r requirements.txt
 
+You must change the tracker address in peer.py as well as in tracker.py to your actual ip address
+
 Run tracker.py first and then run peer.py, you can run many peers to start sharing files to others but remember to run in different host
 ## Design considerations
 • A centralized server keeps track of which clients are connected and storing what pieces of files.
