@@ -6,6 +6,7 @@ import bencodepy
 import threading
 import socket
 import json
+import concurrent.futures
 # các mảnh ở đây có kích thước là 16 Kb
 available_file = {} # 1 từ điển vs khóa là infohash bên trong là đường dẫn đến file đó 
 
@@ -107,6 +108,7 @@ def create_handshake(info_hash, peer_id, ip_address):
     
     print("peer_ip: ", peer_ip)
     print("peer_port: ", peer_port)
+
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     peer_port_new = int(peer_port) + 1
@@ -166,6 +168,54 @@ def create_pieces_local(file_path):
                 break
             pieces.append(piece)
     return pieces
+def download_file(name):
+    # lấy infohash và peerlist của file đó để thực hiện bắt tay
+    info_hash = get_infohash(name) # vẫn ở dạng hex
+    peerlist = peer_list(name)
+    number_of_pieces = int(get_number_of_piece(name))
+    connection = []
+    for ele in peerlist:
+        peer_ip, peer_port = ele.split(":")
+        if (peer_ip != host) and (peer_port) != port:
+            conn = create_handshake(info_hash,peer_id,ele)
+            connection.append(conn)
+    
+    print("số lượng peer có thể seed file {name}", len(connection))
+    print("số lượng pieces của file {name}: ", number_of_pieces)
+    print()
+    write = [None] * number_of_pieces
+    if number_of_pieces <= len(connection) :
+        for i in range (number_of_pieces):
+            
+            write[i] = request_piece(connection[i],i)
+
+    elif number_of_pieces > len(connection):
+        divide = int(number_of_pieces/len(connection))
+        start_index = 0
+        for i in range(len(connection)):
+            # Tính toán điểm cuối cho seeder này
+            if i == len(connection) - 1:  # Nếu là seeder cuối cùng, nhận các mảnh còn lại
+                end_index = number_of_pieces
+            else:
+                end_index = start_index + divide
+
+            for j in range(start_index, end_index):
+                
+                write[j] = request_piece(connection[i],j)
+
+            # Cập nhật điểm bắt đầu cho seeder tiếp theo
+            start_index = end_index
+    print("\nget ready .....\n")
+    peer_data = []
+    for i in range(len(write)):
+        peer_data.append(write[i])
+
+    assemble_file(peer_data,"downloads/" + name)
+    for i in range(len(connection)):
+        connection[i].send(("Stop").encode())
+
+    # Download thành công tự động seed lên server
+    seed("downloads/" + name)
 
 def assemble_file(piece_list, output_file_path):
     output_dir = os.path.dirname(output_file_path)
@@ -306,7 +356,8 @@ def print_file_info(file_data):
         print(str(extracted_byte.hex()))
 def seed(file_path):
     create_torrent(file_path,tracker_url + "/announce")
-    data = read_torrent_file(file_path + ".torrent")[0]
+    file_name = os.path.basename(file_path)
+    data = read_torrent_file(file_name + ".torrent")[0]
     # Kiểm tra file
     print_file_info(data)
     # Thêm file vào từ điển available_file[info_hash] = file_path
@@ -443,7 +494,9 @@ def available_command():
     print("+ number_of_piece <file_name>            # get number of piece in <file_name>")
     print("+ peerlist <file_name>                   # get list of seeder for <file_name>")
     print("+ clear                                  # xóa nội dung trên terminal")
-
+def request_and_store_piece(connection, index):
+    # Yêu cầu mảnh dữ liệu
+    return request_piece(connection, index)
 def main():
     available_command()
     while True:
@@ -501,52 +554,7 @@ def main():
                 print("Invalid list commmand")
             else:
                 name = argument[1]
-                # lấy infohash và peerlist của file đó để thực hiện bắt tay
-                info_hash = get_infohash(name) # vẫn ở dạng hex
-                peerlist = peer_list(name)
-                number_of_pieces = int(get_number_of_piece(name))
-                connection = []
-                for ele in peerlist:
-                    conn = create_handshake(info_hash,peer_id,ele)
-                    connection.append(conn)
-                
-                print("số lượng peer có thể seed file {name}", len(connection))
-                print("số lượng pieces của file {name}: ", number_of_pieces)
-                print()
-                write = [None] * number_of_pieces
-                if number_of_pieces <= len(connection) :
-                    for i in range (number_of_pieces):
-                        
-                        write[i] = request_piece(connection[i],i)
-
-                elif number_of_pieces > len(connection):
-                    divide = int(number_of_pieces/len(connection))
-                    start_index = 0
-                    for i in range(len(connection)):
-                        # Tính toán điểm cuối cho seeder này
-                        if i == len(connection) - 1:  # Nếu là seeder cuối cùng, nhận các mảnh còn lại
-                            end_index = number_of_pieces
-                        else:
-                            end_index = start_index + divide
-
-                        for j in range(start_index, end_index):
-                            
-                            write[j] = request_piece(connection[i],j)
-
-                        # Cập nhật điểm bắt đầu cho seeder tiếp theo
-                        start_index = end_index
-
-                print("\nget ready .....\n")
-                peer_data = []
-                for i in range(len(write)):
-                    peer_data.append(write[i])
-
-                assemble_file(peer_data,"downloads/" + name)
-                for i in range(len(connection)):
-                    connection[i].send(("Stop").encode())
-
-                # Download thành công tự động seed lên server
-                seed(name)
+                download_file(name)
 
         elif(command == "number_of_piece"):
             if(len(argument) != 2):
